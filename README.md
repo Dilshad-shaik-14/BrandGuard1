@@ -2,7 +2,39 @@
 
 > **Enterprise-grade Digital Risk Protection (DRP)** command center for monitoring, detecting, and mitigating brand impersonation, typosquatting, phishing, and counterfeit apps across social networks and mobile app marketplaces.
 
+**Live Demo:** [Open BrandGuard](https://brand-guard1.vercel.app)  
+**GitHub Repository:** [Dilshad-shaik-14/BrandGuard1](https://github.com/Dilshad-shaik-14/BrandGuard1)  
+**Project Type:** Hackathon prototype and security investigation demonstration
+
+## Product Walkthrough
+
+### Dashboard
+<img width="1917" height="902" alt="image" src="https://github.com/user-attachments/assets/874770a4-38dc-4ba3-9179-721f505a88b8" />
+
+- Brand-level security posture, active scan state, and open findings by risk band.
+- High/medium/review distribution with latest scan summary.
+
+### Brand Registry
+<img width="1917" height="910" alt="image" src="https://github.com/user-attachments/assets/8dd74988-e4ad-43aa-bd57-30c219d3c6e9" />
+
+- Register brands, domains, aliases, and official social/app anchors.
+- Verify baseline assets before they are used for exclusion/scoring comparisons.
+
+### Findings Explorer
+<img width="1917" height="912" alt="image" src="https://github.com/user-attachments/assets/84518e4f-d865-44d7-b27b-412e188db817" />
+
+- Filter findings by band/status/type.
+- Review score breakdown, evidence panels, and gate outcomes.
+
+### Explainable Detection Evidence
+<img width="1917" height="912" alt="image" src="https://github.com/user-attachments/assets/27363fd7-8f11-4b28-b2ec-f95c29262775" />
+
+- Character-level diffs (including homoglyph/mixed-script indicators).
+- Signal breakdowns for name/logo/bio/identity/scam vectors.
+- Candidate-vs-official comparison artifacts.
+
 ---
+
 
 ## 🌟 Executive Overview
 
