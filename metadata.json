@@ -1,0 +1,8 @@
+{
+  "name": "BrandGuard",
+  "description": "Digital Risk Protection \u0026 Brand Impersonation Monitoring across social platforms and app stores.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

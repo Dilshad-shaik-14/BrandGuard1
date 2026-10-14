@@ -1,0 +1,317 @@
+@import "tailwindcss";
+
+:root {
+  /* Dark Cybersecurity Operations Palette */
+  --bg-base: #05080C;
+  --bg-surface: #090F16;
+  --bg-surface-elevated: #0F1823;
+  --bg-surface-inset: #060B10;
+  --bg-surface-hover: #14202E;
+
+  --line-subtle: #162230;
+  --line-strong: #223448;
+  --line-active: #06B6D4;
+
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --text-dim: #475569;
+
+  --cyan-accent: #06B6D4;
+  --cyan-glow: rgba(6, 182, 212, 0.2);
+
+  --official: #10B981;
+  --official-bg: rgba(16, 185, 129, 0.12);
+  --official-border: rgba(16, 185, 129, 0.35);
+
+  --high: #EF4444;
+  --high-bg: rgba(239, 68, 68, 0.14);
+  --high-border: rgba(239, 68, 68, 0.4);
+
+  --med: #F59E0B;
+  --med-bg: rgba(245, 158, 11, 0.14);
+  --med-border: rgba(245, 158, 11, 0.4);
+
+  --rev: #EAB308;
+  --rev-bg: rgba(234, 179, 8, 0.14);
+  --rev-border: rgba(234, 179, 8, 0.4);
+
+  --ign: #64748B;
+  --ign-bg: rgba(100, 116, 139, 0.12);
+  --ign-border: rgba(100, 116, 139, 0.3);
+
+  /* Legacy bridges for backward compatibility */
+  --paper: var(--bg-base);
+  --sheet: var(--bg-surface);
+  --sunk: var(--bg-surface-inset);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-3: var(--text-muted);
+  --line: var(--line-subtle);
+  --line-2: var(--line-strong);
+  --official-t: var(--official-bg);
+  --high-t: var(--high-bg);
+  --med-t: var(--med-bg);
+  --rev-t: var(--rev-bg);
+  --ign-t: var(--ign-bg);
+
+  font-family: 'Archivo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-stretch: 94%;
+  color: var(--text-primary);
+  background-color: var(--bg-base);
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(6, 182, 212, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 80%, rgba(16, 185, 129, 0.04), transparent);
+}
+
+/* Typography styles */
+.font-mono-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.font-stretch-title {
+  font-stretch: 100%;
+}
+
+.font-stretch-numeral {
+  font-stretch: 108%;
+}
+
+/* Interactive focus accessibility */
+:focus-visible {
+  outline: 2px solid var(--cyan-accent);
+  outline-offset: 2px;
+}
+
+/* Dark Cybersecurity scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Custom Risk Glyphs with high-tech geometry */
+.glyph-high {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background-color: var(--high);
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.6));
+}
+
+.glyph-medium {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background-color: var(--med);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.6));
+}
+
+.glyph-needs-review {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(to right, var(--rev) 50%, transparent 50%);
+  border: 1px solid var(--rev);
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(234, 179, 8, 0.4));
+}
+
+.glyph-ignored {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ign);
+  background: transparent;
+  flex-shrink: 0;
+}
+
+/* Status dots */
+.glyph-status-completed {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--official);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+  flex-shrink: 0;
+}
+
+.glyph-status-partial {
+  display: inline-block;
+  width: 9px;
+  height: 8px;
+  background-color: var(--med);
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  flex-shrink: 0;
+}
+
+.glyph-status-failed {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  position: relative;
+  flex-shrink: 0;
+}
+.glyph-status-failed::before,
+.glyph-status-failed::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 0;
+  width: 9px;
+  height: 1.5px;
+  background-color: var(--high);
+}
+.glyph-status-failed::before {
+  transform: rotate(45deg);
+}
+.glyph-status-failed::after {
+  transform: rotate(-45deg);
+}
+
+/* Cyber Technical Grid Background */
+.cyber-grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(22, 34, 48, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(22, 34, 48, 0.4) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.cyber-grid-fine {
+  background-image: 
+    linear-gradient(to right, rgba(22, 34, 48, 0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(22, 34, 48, 0.25) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Subtle glowing accent line */
+.cyber-scanner-line {
+  background: linear-gradient(90deg, transparent, var(--cyan-accent), transparent);
+  animation: scanSweep 3s ease-in-out infinite;
+}
+
+@keyframes scanSweep {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Radial threat radar sweep */
+.radar-sweep {
+  animation: radarRotate 4s linear infinite;
+}
+
+@keyframes radarRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Pulse radar ring */
+.pulse-ring {
+  animation: pulseRingExpand 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulseRingExpand {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Cyber card styling with subtle corner highlights */
+.cyber-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--line-subtle);
+  position: relative;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cyber-panel:hover {
+  border-color: var(--line-strong);
+}
+
+.cyber-panel-elevated {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--line-strong);
+  position: relative;
+}
+
+.cyber-panel-inset {
+  background: var(--bg-surface-inset);
+  border: 1px solid var(--line-subtle);
+}
+
+/* Cyber Corner HUD brackets */
+.cyber-hud-corner::before,
+.cyber-hud-corner::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  pointer-events: none;
+}
+.cyber-hud-corner::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1.5px solid var(--cyan-accent);
+  border-left: 1.5px solid var(--cyan-accent);
+}
+.cyber-hud-corner::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1.5px solid var(--cyan-accent);
+  border-right: 1.5px solid var(--cyan-accent);
+}
+
+/* Glowing text and badge accents */
+.text-cyan-glow {
+  color: var(--cyan-accent);
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+}
+
+.text-emerald-glow {
+  color: var(--official);
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.text-red-glow {
+  color: var(--high);
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
