@@ -1,11 +1,14 @@
-# BrandGuard - Digital Identity Protection Platform
+# BrandGuard — Digital Identity Protection Platform
 
-> **Live demo:** https://brand-guard1.vercel.app
+> Deterministic, explainable triage for suspicious brand social profiles and mobile applications.
 
-BrandGuard is a deterministic, explainable triage platform for suspicious brand social profiles and mobile apps. It compares candidate identities against registered official assets, produces transparent risk evidence, and supports analyst review decisions.
+**Live Demo:** [Open BrandGuard](https://brand-guard1.vercel.app)  
+**GitHub Repository:** [Dilshad-shaik-14/BrandGuard1](https://github.com/Dilshad-shaik-14/BrandGuard1)  
+**Project Type:** Hackathon prototype and security investigation demonstration
 
-**Scope clarification:** this repository is a **local demonstration/evaluation system**. It scans candidate records that already exist in the app data store, is **not** a continuous internet crawler, and does **not** submit automatic takedown requests.
+BrandGuard is a React and FastAPI application for registering a brand's official identity anchors, scanning a candidate dataset, explaining why a candidate may be suspicious, and moving findings through a human analyst review workflow.
 
+The project includes a controlled synthetic benchmark demonstrating Unicode homoglyphs, typosquatting, copied logos, identity conflicts, deceptive app packages, and official-asset exclusions. The current scan implementation evaluates candidate records stored in the database. It is not a continuously running crawler and does not automatically submit takedown requests.
 ## Product Walkthrough
 
 ### Dashboard
@@ -33,440 +36,483 @@ BrandGuard is a deterministic, explainable triage platform for suspicious brand 
 - Signal breakdowns for name/logo/bio/identity/scam vectors.
 - Candidate-vs-official comparison artifacts.
 
+---
 
-## Contents
+## Table of Contents
 
 - [Problem](#problem)
-- [Solution and workflow](#solution-and-workflow)
-- [Feature status](#feature-status)
-- [Product walkthrough](#product-walkthrough)
+- [Solution and Workflow](#solution-and-workflow)
+- [Feature Status](#feature-status)
+- [Product Walkthrough](#product-walkthrough)
 - [Architecture](#architecture)
-- [Technology stack](#technology-stack)
-- [Detection methodology](#detection-methodology)
-- [Synthetic examples](#synthetic-examples)
-- [Risk scoring and finding lifecycle](#risk-scoring-and-finding-lifecycle)
-- [API reference](#api-reference)
-- [Evaluation and testing](#evaluation-and-testing)
-- [Local setup](#local-setup)
-- [Data sources and integration boundaries](#data-sources-and-integration-boundaries)
-- [Repository structure](#repository-structure)
-- [Security and responsible use](#security-and-responsible-use)
-- [Deployment instructions](#deployment-instructions)
-- [Limitations and future improvements](#limitations-and-future-improvements)
+- [Technology Stack](#technology-stack)
+- [Detection Methodology](#detection-methodology)
+- [Synthetic Examples](#synthetic-examples)
+- [Risk Scoring and Finding Lifecycle](#risk-scoring-and-finding-lifecycle)
+- [API Reference](#api-reference)
+- [Evaluation and Testing](#evaluation-and-testing)
+- [Local Setup](#local-setup)
+- [Data Sources and Integration Boundaries](#data-sources-and-integration-boundaries)
+- [Repository Structure](#repository-structure)
+- [Security and Responsible Use](#security-and-responsible-use)
+- [Deployment Notes](#deployment-notes)
+- [Limitations and Future Improvements](#limitations-and-future-improvements)
 - [Conclusion](#conclusion)
 
 ## Problem
 
-Brand abuse detection needs to catch:
-- typo/homoglyph impersonation,
-- copied or near-copied logos/icons,
-- official-sounding language in bios/descriptions,
-- identity/package conflicts (account IDs, handles, package IDs, developer IDs),
-- while limiting false positives from legitimate third parties.
+Brand impersonation is not limited to an exact copy of a website. A suspicious identity may:
 
-This project uses **synthetic demonstration data**. Any mention of **NovaPay** in this README refers to fictional benchmark examples only.
+- Use a one-character typo or a visually confusable Unicode character.
+- Copy a brand's logo or application icon.
+- Reuse official-sounding profile language.
+- Operate under a different social account ID, package ID, or publisher.
+- Appear in a mobile store with a deceptive title but a different bundle identifier.
 
-## Solution and workflow
+Manual review can be slow when analysts must compare names, images, descriptions, and platform identifiers separately. It is also easy to generate false positives by flagging an authorized account or a legitimate companion application.
 
-Target workflow (requested architecture) and current implementation are reconciled below:
+BrandGuard makes the comparison process more structured by recording detection evidence and applying corroboration rules before assigning stronger risk bands.
 
-1. Register brands and official anchors (social handles, package/bundle IDs, developer identity).
-2. Load an isolated synthetic benchmark (e.g., fictional NovaPay-like samples).
-3. Run a scan over database-resident candidate records.
-4. Exclude candidates that exactly match official IDs/package IDs before scoring.
-5. Compute deterministic signals: name, logo, description/bio, identity conflict, scam language.
-6. Apply normalized weights and corroboration guardrails (name-only/coverage caps).
-7. Persist findings and review decisions.
-8. Analysts review findings and produce human-reviewed takedown drafts.
+> The NovaPay benchmark used by this project is fictional synthetic data for demonstration and evaluation. It does not represent a real-world accusation or a production threat feed.
 
-### Current repository truth
-- The codebase is **TypeScript + Express + React**, not FastAPI.
-- Persistence in this repo is demo-state storage (front-end local state/localStorage), not PostgreSQL.
-- Human-reviewed workflows are implemented; automatic takedown submission is not.
+## Solution and Workflow
 
-## Feature status
+The implemented workflow is:
 
-| Capability | Status in current repo | Notes |
+1. Register a protected brand with its website, description, aliases, and official identity anchors.
+2. Load the isolated NovaPay benchmark through the demo controls or API.
+3. Start a scan for the selected brand.
+4. Read candidate records from the active database dataset. The current scan route identifies the source as `synthetic_demo`.
+5. Check official social IDs and application package IDs before scoring.
+6. Calculate name, logo, description, and identity-conflict signals.
+7. Normalize available signal weights and apply corroboration guardrails.
+8. Persist findings, signal explanations, exclusions, and scan statistics in PostgreSQL.
+9. Inspect evidence in the frontend and transition a finding through analyst review.
+10. Generate a takedown notice draft with a human-verification checklist.
+
+The frontend also supports a client-side demonstration engine and local-storage fallback when the FastAPI service is unavailable. The Settings page can force client mode or configure a different API base URL.
+
+## Feature Status
+
+| Capability | Current implementation | Status |
 |---|---|---|
-| Brand registration and official asset baseline | Implemented | UI and store support brand/asset management. |
-| Deterministic multi-signal scoring | Implemented | Weighted signal breakdown shown per finding. |
-| Explainable evidence views | Implemented | Char diff, comparison tables, signal evidence views exist. |
-| Findings review lifecycle and audit events | Implemented | Review statuses and event trail are stored per finding. |
-| Synthetic benchmark/evaluation dashboards | Implemented | Evaluation metrics are seeded synthetic data. |
-| Continuous live crawling scheduler | Not implemented | Current scans are local demo operations over resident candidate data. |
-| Automatic takedown request submission | Not implemented | Next-step guidance is generated, but submission is manual/out of scope. |
-| Authentication/tenant isolation | Not implemented | Demo app; no auth service in this checkout. |
-| FastAPI + PostgreSQL + Alembic stack | Planned / not present in this checkout | Current backend is Express + TypeScript with in-repo state model. |
+| Brand registry | Create, list, retrieve, update, and archive brands; normalize official domains | Implemented |
+| Brand aliases | Add alternate brand spellings through the API and demo data | Implemented |
+| Official social anchors | Store platform, handle, and optional external account ID | Implemented |
+| Official app anchors | Store platform, package/bundle ID, and publisher metadata | Implemented |
+| Candidate analysis | Analyze database-resident social and mobile-app records | Implemented |
+| Unicode and leetspeak detection | NFKC normalization, selected homoglyph mapping, deterministic substitutions | Implemented |
+| Logo comparison | Compare 64-bit hexadecimal perceptual hashes using Hamming distance | Implemented |
+| Description comparison | Stopword-filtered term-frequency cosine comparison | Implemented |
+| Risk scoring | Weighted, coverage-aware composite scoring and corroboration rules | Implemented |
+| Official exclusions | Exact social external-ID and app package-ID checks, with handle fallback only when no ID exists | Implemented |
+| Analyst workflow | Finding filters, review status, notes, and review events | Implemented |
+| Takedown report | Markdown draft and human pre-submission checklist | Draft only; no automatic submission |
+| Synthetic evaluation | Isolated labels and confusion-matrix metrics | Implemented |
+| Apple iTunes source catalog | Listed as a source in `/sources` | Catalog entry only; not connected to scan execution |
+| CSV/JSON ingestion | Listed as a source concept | No upload/import route implemented |
+| Scheduled monitoring | No scheduler or recurring scan implementation | Not implemented |
+| Authentication and authorization | No user authentication or role enforcement | Not implemented |
+
+## Product Walkthrough
+
+The application provides interfaces for:
+
+1. **Dashboard** — overview of detection results and investigation workflow.
+2. **Brand Registry** — official identity anchors used during candidate analysis and exclusion.
+3. **Scan Setup** — available synthetic source and scan workflow.
+4. **Findings Explorer** — filters for risk band, platform, status, and candidate records.
+5. **Detection Evidence** — available signal values, methods, explanations, and candidate metadata.
+6. **Analyst Review** — update finding status and add investigation notes.
+7. **Takedown Draft** — draft report with a human-verification checklist.
+8. **Benchmark Evaluation** — confusion matrix and technique-related evaluation metrics.
+9. **Settings** — backend health, API base URL, and client fallback controls.
+
+### Screenshots
+
+Add genuine screenshots from the running application under `docs/screenshots/` and link them here. Do not use mockups or unrelated stock imagery as screenshots of the actual product.
+
+Example:
+
+```markdown
+![BrandGuard dashboard](docs/screenshots/dashboard.png)
+```
 
 ## Architecture
 
-### Implemented in this repository
-- **Frontend:** React 19 + TypeScript + Vite.
-- **Backend:** Express + TypeScript API.
-- **Engine:** deterministic TypeScript scoring/parsing/diff utilities.
-- **Data model:** seeded synthetic brands/findings/scans/evaluation with local persistence for demo use.
-- **Evaluation:** isolated synthetic labels and metrics in app state.
+BrandGuard is organized as a frontend, backend API, database layer, and deterministic detection engine. It has two execution modes:
 
-### Requested/alternative architecture (not currently present in repo)
-The user-supplied target mentions FastAPI + SQLAlchemy/Pydantic/Alembic + PostgreSQL 16 via Docker Compose. Those services/files are not present in this checkout.
-
-### Explicitly absent from current implementation
-No workers/queues/crawlers/schedulers/auth service/automatic takedown service are implemented in this repository.
-## Architecture
-
-BrandGuard follows a modular, analyst-centric architecture that separates the user interface, API layer, detection engine, data management, and evaluation workflows. The platform processes candidate social profiles and mobile app records against registered official brand assets to generate explainable risk findings.
-
-### Architecture Diagram
+- **Frontend:** React 19, TypeScript, and Vite. The API client calls FastAPI when available and can fall back to client-side storage and detection.
+- **Backend:** FastAPI routers, SQLAlchemy models, Pydantic schemas, and Alembic migrations.
+- **Persistence:** PostgreSQL 16 for server-side application records.
+- **Detection engine:** Deterministic Python modules under `backend/app/engine/`.
+- **Evaluation:** Ground-truth labels are stored separately in `evaluation_labels`; the scan logic does not query those labels.
 
 ```mermaid
 flowchart TD
-    U[Security Analyst] --> UI[React 19 + TypeScript + Vite]
-    
-    UI --> API[Express + TypeScript REST API]
-    
-    API --> ROUTES[API Routes and Validation]
-    ROUTES --> SERVICE[BrandGuard Service Layer]
-    
-    SERVICE --> STORE[Demo Data Store]
-    STORE --> BRANDS[Brand Registry and Official Assets]
-    STORE --> CANDIDATES[Candidate Profiles and Apps]
-    STORE --> FINDINGS[Findings and Review Events]
-    STORE --> SCANS[Scan and Evaluation Records]
-    
-    SERVICE --> ENGINE[Deterministic Detection Engine]
-    
-    ENGINE --> NAME[Name Similarity and Homoglyph Detection]
-    ENGINE --> LOGO[Logo Similarity Evidence]
-    ENGINE --> BIO[Bio and Description Analysis]
-    ENGINE --> IDENTITY[Identity Conflict Detection]
-    ENGINE --> SCAM[Scam Language Signals]
-    
-    NAME --> SCORE[Weighted Risk Scoring]
-    LOGO --> SCORE
-    BIO --> SCORE
-    IDENTITY --> SCORE
-    SCAM --> SCORE
-    
-    SCORE --> GUARD[Risk Bands and Corroboration Guardrails]
-    GUARD --> FINDINGS
-    
-    FINDINGS --> REVIEW[Analyst Review and Audit Trail]
-    REVIEW --> UI
-    
-    SERVICE --> EVAL[Synthetic Evaluation Metrics]
-    EVAL --> UI
+    U[Analyst / Demo User] --> UI[React + TypeScript Frontend]
+    UI --> API[API Client]
+    API -->|Backend available| FA[FastAPI REST API]
+    API -->|Fallback mode| CS[Client-side Store and Engine]
+    FA --> ENG[Detection Engine]
+    FA --> DB[(PostgreSQL)]
+    ENG --> SIG[Signals and Risk Assessment]
+    DB --> REC[Candidate Records and Findings]
+    SIG --> REC
+    REC --> UI
+    CS --> LS[(Browser localStorage)]
+    CS --> UI
 ```
 
-### 1. Presentation Layer
+There is no separate worker, queue, crawler, scheduler, authentication service, or automatic takedown service in the repository.
 
-**Technologies:** React 19, TypeScript, Vite, Tailwind CSS.
+## Technology Stack
 
-The frontend provides an interactive security analyst workspace through:
-
-- **Dashboard:** Brand security posture, scan summaries, and risk distribution.
-- **Brand Registry:** Registration of brands, aliases, domains, and official identity assets.
-- **Findings Explorer:** Filtering, prioritization, and investigation of suspicious candidates.
-- **Evidence Viewer:** Character-level differences, signal breakdowns, and identity comparisons.
-- **Review Workflow:** Updating finding statuses and recording analyst decisions.
-
-### 2. API Layer
-
-**Technologies:** Node.js, Express, TypeScript.
-
-The Express backend exposes REST endpoints under `/api` for brand management, scanning, lookalike analysis, profile parsing, finding reviews, and evaluation data.
-
-The API layer connects frontend requests to the service and detection modules. It is separate from the React presentation layer, allowing backend logic to evolve independently.
-
-### 3. Detection and Risk Analysis Engine
-
-**Technology:** TypeScript.
-
-The detection engine evaluates candidate identities against registered official assets using deterministic, explainable signals:
-
-- **Name similarity:** Typographical variations, homoglyphs, mixed scripts, and lookalike patterns.
-- **Logo similarity:** Visual similarity evidence associated with candidate and official assets.
-- **Description analysis:** Similarity in profile biographies, descriptions, and suspicious language.
-- **Identity conflicts:** Mismatches involving handles, account identifiers, package IDs, and developer identities.
-- **Scam indicators:** Suspicious language and other risk-related evidence.
-
-The engine combines the available signals using weighted scoring and applies guardrails, including name-only and low-evidence-coverage caps. Findings are assigned risk bands to help analysts prioritize investigations.
-
-### 4. Data Management Layer
-
-**Current implementation:** Demo-state storage with frontend local state and localStorage.
-
-The application manages demonstration records for:
-
-- Registered brands and official assets.
-- Candidate social profiles and mobile applications.
-- Scan records and generated findings.
-- Analyst review decisions and event history.
-- Synthetic evaluation datasets and metrics.
-
-The current repository does **not** implement PostgreSQL persistence or a production database migration layer. Data persistence depends on the specific application flow and storage mechanism.
-
-### 5. Review and Audit Layer
-
-The review workflow supports human-controlled decisions, including `new`, `under_review`, `confirmed`, `false_positive`, and `resolved` statuses.
-
-Review actions maintain event history containing status transitions, reviewer information, notes, and timestamps where supported by the implementation. This helps analysts understand how findings were handled.
-
-BrandGuard provides investigation support and takedown guidance; it does not automatically submit takedown requests.
-
-### 6. Evaluation Layer
-
-The evaluation interface presents seeded synthetic metrics and benchmark examples to demonstrate the detection workflow and compare risk-scoring behavior.
-
-These metrics are intended for demonstration and algorithm evaluation. They should not be interpreted as independently validated production detection accuracy.
-
-### 7. Deployment and Integration Boundaries
-
-The frontend can be built and deployed as a web application, while the Express backend can run as a separate Node.js service when the deployment environment supports it.
-
-The current repository does not include a production crawler, scheduled scanning workers, a queue system, authentication service, tenant isolation, or a PostgreSQL-backed infrastructure.
-
-### Architecture Summary
-
-| Component | Technology | Responsibility |
+| Technology | Layer | Purpose |
 |---|---|---|
-| Frontend | React 19, TypeScript, Vite | Analyst dashboard and investigation UI |
-| API | Express, TypeScript | REST endpoints and request handling |
-| Detection engine | TypeScript modules | Similarity analysis and explainable scoring |
-| Demo data layer | App state and localStorage | Demonstration records and review state |
-| Evaluation | Synthetic benchmark data | Demonstration metrics and scoring comparisons |
-| Deployment | Vercel frontend; separately hosted backend where configured | Application delivery |
+| React 19 | Frontend | Pages, modals, navigation, review workflow |
+| TypeScript | Frontend | Typed domain models and API client |
+| Vite 8 | Frontend tooling | Development server and production bundle |
+| Tailwind CSS 4 | Frontend styling | Utility-based styling through the Vite plugin |
+| Recharts | Frontend | Risk and evaluation visualizations |
+| Lucide React and Motion | Frontend UI | Icons and interaction effects |
+| FastAPI | Backend | REST API and OpenAPI/Swagger documentation |
+| Uvicorn | Backend runtime | ASGI server |
+| SQLAlchemy 2 | Persistence | ORM models and database sessions |
+| PostgreSQL 16 | Database | Development database via Docker Compose |
+| Alembic | Database tooling | Database schema migrations |
+| Pydantic 2 | API contracts | Request and response validation |
+| RapidFuzz | Detection | Name similarity and token ratios |
+| Pillow and ImageHash | Detection | Perceptual image-hash support |
+| pytest, Hypothesis, Ruff, mypy | Backend development | Testing and code-quality tooling |
 
-**Design principle:** BrandGuard prioritizes explainability, deterministic scoring, human oversight, and a clear separation between implemented demo capabilities and planned production infrastructure.
+## Detection Methodology
 
-## Technology stack
+### Name Similarity and Homoglyphs
 
-| Layer | Verified technology | Usage in this repository |
+`backend/app/engine/name_similarity.py` applies Unicode NFKC normalization, maps a selected set of Cyrillic/Greek confusable characters, removes non-alphanumeric characters for compact comparison, and lowercases the result.
+
+The implemented logic includes:
+
+- Exact raw-name matches.
+- Selected homoglyph substitutions that normalize to the reference name.
+- Selected leetspeak substitutions such as `0` for `o`, `3` for `e`, `4` for `a`, and `5` for `s`.
+- RapidFuzz ratio and token-sort ratio for remaining candidates.
+
+The output retains raw and normalized values, a method name, a homoglyph flag, and a readable explanation. The mapping is finite and is not a complete Unicode confusables database.
+
+### Logo and Icon Similarity
+
+The engine compares hexadecimal perceptual hashes by converting them to integers, applying XOR, and counting set bits to calculate Hamming distance. A distance of zero indicates identical hashes; distances up to five receive a near-identical score. Missing or malformed hashes are reported as unavailable rather than silently treated as positive evidence.
+
+### Description Similarity
+
+The description comparison tokenizes alphabetic words of length two or more, removes a small stopword set, builds term-frequency counters, and computes cosine similarity. The response includes a percentage score, shared keywords, and an explanation.
+
+Although the method is named `tfidf_cosine_similarity`, the current implementation uses term frequency rather than an inverse-document-frequency corpus.
+
+### Identity Conflicts
+
+The scan assigns an identity-conflict signal when a social candidate has an external account ID or lacks one, and when a mobile-app candidate has a package ID or lacks one. Exact official matches are removed before signals are calculated. A different external ID or package ID remains available as evidence of an identity conflict.
+
+### Official Asset Exclusion
+
+Exclusion occurs before scoring:
+
+- For social profiles, a registered external account ID requires the same platform and exact ID. A matching handle alone is not enough when an official ID exists.
+- If no official external ID is registered, normalized handle equality on the same platform is used as a fallback.
+- For mobile applications, the platform and exact package/bundle ID must match.
+- A shared developer ID is supporting metadata only and does not exclude a different package.
+
+## Synthetic Examples
+
+The benchmark is a controlled fictional dataset loaded through `POST /api/v1/demo/load`.
+
+| Candidate pattern | Example evidence | Expected behavior |
 |---|---|---|
-| Frontend | React 19, TypeScript, Vite | Analyst UI and dashboards |
-| Backend API | Express, TypeScript | REST endpoints under `/api` |
-| Detection engine | TypeScript modules | Name parsing, lookalike heuristics, char diff, field comparisons |
-| Styling/UI | Tailwind (via `@tailwindcss/vite`) | Frontend styling |
-| Runtime | Node.js | App/runtime scripts |
-| AI dependency | `@google/genai` | Present in dependencies (feature usage depends on app flows) |
-| Persistence (demo) | Local app state/localStorage | Synthetic data and review event state |
-| Container DB stack | Docker Compose + PostgreSQL 16 | Not present in current checkout |
+| NovaPay with a different social ID | Exact name, copied logo hash, rogue external ID | High-risk corroborated finding |
+| `NovаPay Rewards` | Cyrillic `а` (U+0430), near-identical hash, rogue ID | High-risk homoglyph finding |
+| `NovaPqy Official` | One-character substitution and similar description | Scored as a typo/lookalike candidate |
+| NovaPay wallet app | Copied icon, brand title, different package and developer | High-risk deceptive-app candidate |
+| Official NovaPay social account | Exact platform and registered external ID | Excluded before scoring |
+| Official `com.novapay.wallet` app | Exact platform and package ID | Excluded before scoring |
+| Different app from the same publisher | Same developer ID but different package ID | Not excluded solely because the publisher matches |
 
-## Detection methodology
+These are synthetic records, not observations from live platforms.
 
-### 1) Name similarity (NFKC/homoglyph/leetspeak-oriented checks)
-- Lookalike detector handles spacing/punctuation variants, confusable non-ASCII characters, mixed scripts, leetspeak substitutions, transpositions, insertions/deletions, and added-word affixes.
-- Character-level diff utilities expose script/homoglyph context to analysts.
+## Risk Scoring and Finding Lifecycle
 
-### 2) Logo similarity
-- Findings include logo/icon similarity evidence and contributions.
-- UI/evidence references perceptual-style comparisons for analyst inspection.
+The configured base weights are:
 
-### 3) Description/Bio similarity
-- Bio/description similarity contributes as a weighted text signal.
-- Suspicious language and off-domain links influence risk.
+| Signal | Base weight |
+|---|---:|
+| Name similarity | 40% |
+| Logo similarity | 25% |
+| Identity conflict | 20% |
+| Description similarity | 15% |
 
-### 4) Identity conflicts
-- Candidate-vs-official account identity mismatches (e.g., external ID, handle/package/developer mismatch) are scored.
-- Exact official identifiers are set aside before scoring to reduce self-alerts.
+Only available signals participate, and their weights are normalized over the available set. A candidate with only one high name signal cannot become medium or high; it is capped at `needs_review`.
 
-### 5) Official asset exclusion
-- Official baselines are excluded prior to risk ranking when exact identifiers match.
+Strong corroboration requires at least two available signals at or above 60. Moderate corroboration requires at least two at or above 45.
 
-### 6) Risk scoring (base weights and bands)
-**Base signal weights used in seeded findings:**
-- Name similarity: **0.35**
-- Logo similarity: **0.25**
-- Bio/description similarity: **0.20**
-- Identity conflict: **0.10**
-- Scam language: **0.10**
-
-**Bands used by the UI/workflow:**
-- `ignored`: < 30
-- `needs_review`: 30–54
-- `medium`: 55–74
-- `high`: 75–100
-
-**Guardrails:**
-- Name-only cap (prevents promotion without corroborating signals).
-- Low-coverage cap (evidence coverage gating before high-certainty escalation).
-
-## Synthetic examples
-
-The repository ships seeded synthetic brands (e.g., Veltrix, Marigold, Orbyte). For the requested NovaPay framing, these fictional examples illustrate expected behavior:
-
-| Synthetic NovaPay example | Expected behavior |
+| Risk band | Rule |
 |---|---|
-| `N0vaPay Support` with leetspeak and scam refund language | High/medium candidate depending on corroborating logo/bio/ID conflict signals |
-| `NоvaPay` (Cyrillic homoglyph) using copied icon | High-risk due to homoglyph + visual similarity + identity conflict |
-| `NovaPay Delivery Hiring` third-party staffing post | Needs review (possible legitimate partner; analyst verification required) |
-| App package `com.novapay.wallet.pro` by unrelated publisher | Medium/high candidate with package/developer conflict indicators |
-| Official NovaPay handle/package exact match | Excluded before scoring (no impersonation finding) |
+| `ignored` | Composite score below 30 |
+| `needs_review` | Composite score at least 30 without sufficient corroboration |
+| `medium` | Composite score at least 55 with moderate corroboration |
+| `high` | Composite score at least 75 with strong corroboration |
 
-## Risk scoring and finding lifecycle
+Findings begin with review status `new`. The review API accepts `investigating`, `confirmed`, `false_positive`, or `dismissed`, stores analyst notes and a review timestamp, and appends a review event containing the previous status, new status, notes, and reviewer identity.
 
-- Review statuses: `new` → `under_review` → `confirmed` / `false_positive` / `resolved`.
-- Review actions append immutable event entries (`from_status`, `to_status`, reviewer, note, timestamp).
-- Bulk actions can re-prioritize bands while preserving review-event history.
-- Analyst output is human-reviewed triage/takedown guidance; Markdown-style reporting can be generated from reviewed findings externally.
+The report route generates a Markdown draft with the target, score, risk band, signal breakdown, recommended escalation, and human verification checks. It is marked **DRAFT — FOR HUMAN REVIEW ONLY** and does not contact a platform or remove content.
 
-## API reference
+> Implementation note: the current scan persistence loop writes `FindingSignal.weight` as `0.25` for each signal even though the composite scorer uses the base weights above. Treat persisted contribution fields as evidence metadata, not as the authoritative recomputation of the composite score.
 
-Current backend is Express. Endpoints below are implemented under `/api`:
+## API Reference
+
+The backend exposes:
+
+- OpenAPI JSON: `/api/v1/openapi.json`
+- Swagger UI: `/docs`
+- ReDoc: `/redoc`
+
+In local Docker Compose, these are available at `http://localhost:8000`.
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/api/health` | API health response |
-| GET | `/api/brands` | List brands |
-| GET | `/api/brands/:brandId` | Fetch single brand |
-| GET | `/api/brands/:brandId/findings` | List findings for brand |
-| GET | `/api/brands/:brandId/assets` | List official assets for brand |
-| GET | `/api/brands/:brandId/scans` | List scans for brand |
-| POST | `/api/analyze/lookalike` | Deterministic name-lookalike analysis |
-| POST | `/api/analyze/parse-profile` | Parse social/app profile input |
-| POST | `/api/findings/:id/review` | Update finding review status |
-| POST | `/api/scans/run` | Trigger scan run |
-| GET | `/api/sources` | List source metadata |
-| GET | `/api/evaluation` | Return synthetic evaluation metrics |
-| GET | `/api-status` | Backend service status |
+| `GET` | `/api/v1/health/live` | Process liveness and version |
+| `GET` | `/api/v1/health/ready` | Readiness-shaped response and environment metadata |
+| `GET` | `/api/v1/brands` | List active brands |
+| `POST` | `/api/v1/brands` | Create a brand |
+| `GET` | `/api/v1/brands/{brand_id}` | Retrieve a brand |
+| `PATCH` | `/api/v1/brands/{brand_id}` | Update metadata or active state |
+| `POST` | `/api/v1/brands/{brand_id}/aliases` | Add a brand alias |
+| `GET` | `/api/v1/brands/{brand_id}/assets` | List official identity anchors |
+| `POST` | `/api/v1/brands/{brand_id}/assets` | Register a social or app anchor |
+| `PATCH` | `/api/v1/assets/{asset_id}` | Update an official anchor |
+| `DELETE` | `/api/v1/assets/{asset_id}` | Delete an official anchor |
+| `POST` | `/api/v1/scans` | Run a deterministic scan for a brand |
+| `GET` | `/api/v1/scans?brand_id={id}` | List scan summaries |
+| `GET` | `/api/v1/findings` | Filter findings |
+| `GET` | `/api/v1/findings/{finding_id}` | Retrieve candidate, signals, evidence, and review events |
+| `PATCH` | `/api/v1/findings/{finding_id}/review` | Update review state and append a review event |
+| `GET` | `/api/v1/findings/{finding_id}/report` | Generate a human-reviewed Markdown report draft |
+| `GET` | `/api/v1/sources` | List configured source catalog entries |
+| `GET` | `/api/v1/sources/status` | Return source counts and integration status |
+| `POST` | `/api/v1/demo/load` | Load the NovaPay benchmark |
+| `POST` | `/api/v1/demo/reset` | Reset scans/findings and reload demo data |
+| `GET` | `/api/v1/evaluation/summary` | Compute confusion-matrix and technique metrics |
 
-### OpenAPI / Swagger / ReDoc
-- FastAPI-style `/openapi.json`, `/docs`, `/redoc` are **not configured** in this checkout.
+**Security warning:** The route definitions do not require authentication. Do not expose this development configuration to an untrusted network without adding authentication, authorization, and deployment hardening.
 
-### Local API commands
+## Evaluation and Testing
+
+### Backend Tests
+
+The repository declares pytest and includes focused tests for:
+
+- Exact name matching.
+- Cyrillic homoglyph detection.
+- Leetspeak substitution.
+- Name-only risk capping.
+- Corroborated high-risk classification.
+- Official social and app exclusions.
+
+From the backend directory, install dependencies and run:
+
 ```bash
-# start backend
-npx tsx /home/runner/work/BrandGuard1/BrandGuard1/backend/server.ts
-
-# health
-curl http://localhost:3000/api/health
-
-# status
-curl http://localhost:3000/api-status
-
-# list brands
-curl http://localhost:3000/api/brands
+cd backend
+python -m pip install -r requirements.txt
+python -m pytest tests -v
 ```
 
-## Evaluation and testing
+The project targets Python 3.12 in `pyproject.toml`. Use a compatible Python environment.
 
-### Backend/frontend checks available in repository
-- `npm run lint` (TypeScript type-check)
-- `npm run build` (Vite production build)
+### Frontend Checks
 
-### Tests
-- No dedicated unit/integration test suite is currently configured in this checkout.
+From the repository root:
 
-### Dependency caveats
-- Some features depend on environment/config values (see `.env.example`).
-- `@google/genai` exists in dependencies; behavior depends on runtime flows and key configuration.
+```bash
+npm run lint
+npm run build
+```
 
-### Synthetic evaluation metrics
-- Evaluation views and numbers are seeded synthetic metrics intended for demonstration and algorithm comparison, not production KPI claims.
+`npm run lint` runs `tsc --noEmit` for TypeScript diagnostics; it is a type-check command, not a full ESLint ruleset.
 
-## Local setup
+If dependency installation fails, inspect the exact error and the declared Node.js/npm versions. The audited snapshot showed a peer-dependency conflict involving Vite and esbuild, and the production build required the `react-is` peer package. Verify the current repository manifest before changing dependency versions.
+
+### Synthetic Evaluation
+
+`GET /api/v1/evaluation/summary` computes confusion-matrix and technique metrics using isolated synthetic labels. The labels are not queried by the scan detector.
+
+These metrics describe the controlled benchmark only; they are not evidence of production accuracy or real-world performance. Run the benchmark and record actual output before quoting any numbers in a presentation or submission.
+
+## Local Setup
 
 ### Prerequisites
-- Node.js 18+
-- npm (or bun)
 
-### 1) Frontend-only / client fallback setup
+- Node.js and npm compatible with the frontend dependencies.
+- Python 3.12 for the backend.
+- Docker Desktop with Docker Compose, or a reachable PostgreSQL 16 instance.
+- Git, if cloning the repository.
+
+### 1. Clone the Repository
+
 ```bash
-cd /home/runner/work/BrandGuard1/BrandGuard1
+git clone https://github.com/Dilshad-shaik-14/BrandGuard1.git
+cd BrandGuard1
+```
+
+### 2. Start the Backend with Docker Compose
+
+```bash
+cd backend
+docker compose up --build
+```
+
+Compose starts PostgreSQL 16, applies Alembic migrations, and starts Uvicorn on port 8000.
+
+### 3. Start the Frontend
+
+Open a second terminal at the repository root:
+
+```bash
 npm install
 npm run dev
 ```
-Open `http://localhost:3000`.
 
-### 2) Docker Compose backend setup
-- **Not available in this checkout** (`docker-compose*.yml` is absent).
-- If you require containerized backend+database, add Compose assets in a future infrastructure update.
+Open the local URL printed by Vite, typically `http://localhost:3000`.
 
-### 3) Backend without Docker
-```bash
-cd /home/runner/work/BrandGuard1/BrandGuard1
-npm install
-npx tsx backend/server.ts
+If the backend is unavailable, the frontend can use its client-side store and detection engine. The Settings page can force client mode.
+
+### 4. Verify the Backend
+
+In PowerShell, for example:
+
+```powershell
+Invoke-RestMethod -Method Get http://localhost:8000/api/v1/health/live
+Invoke-RestMethod -Method Post http://localhost:8000/api/v1/demo/load
+Invoke-RestMethod -Method Get http://localhost:8000/api/v1/evaluation/summary
 ```
 
-### 4) Demo sequence
-1. Launch app and select a seeded brand.
-2. Review registered official assets in profile/registry flows.
-3. Trigger a scan and inspect findings.
-4. Open evidence panels and signal breakdowns.
-5. Apply analyst review decisions with notes.
+### 5. Run the Demo Workflow
 
-## Data sources and integration boundaries
+1. Start PostgreSQL and the backend.
+2. Start the frontend.
+3. Use **Reset Benchmark Fixtures** or call `POST /api/v1/demo/reset`.
+4. Launch a scan for the loaded NovaPay brand.
+5. Inspect findings and evidence.
+6. Change a finding's review status and add a note.
+7. Generate a draft report.
+8. Open the evaluation view after the scan to inspect computed metrics.
 
-- Current dataset is synthetic/demo-first, with imported-batch placeholders (`simulated` and `imported` origins).
-- CSV/JSON-style ingestion behavior is represented by import workflows in app state.
-- Apple iTunes catalog/App Store source metadata is present as seeded source descriptors.
-- **Important:** catalog/source entries in this demo do **not** prove live production integrations in this repository.
+## Data Sources and Integration Boundaries
 
-## Repository structure
+| Source | Current behavior |
+|---|---|
+| Synthetic Identity Benchmark Feed | Local deterministic records; used by the current scan route |
+| Enterprise CSV/JSON Snapshot Ingestion | Described in the catalog, but no upload/import router is present |
+| Apple iTunes Store Search API | Listed in the catalog, but no provider adapter or live request is wired into current scan execution |
+
+No credentials are required for the offline benchmark. Do not infer live-search success, provider quota guarantees, or production integrations from the source catalog alone.
+
+## Repository Structure
 
 ```text
-/home/runner/work/BrandGuard1/BrandGuard1
+.
+├── src/
+│   ├── App.tsx
+│   ├── components/             # Navigation, modals, badges, notices
+│   ├── data/syntheticData.ts   # Client-side demo fixtures
+│   ├── engine/                 # Client-side deterministic engine
+│   ├── pages/                  # Overview, registry, findings, evaluation, settings
+│   ├── services/               # API client and local-storage fallback
+│   └── types/brandguard.ts     # Shared frontend domain types
 ├── backend/
-│   ├── api/routes.ts
-│   ├── engine/
-│   │   ├── charDiff.ts
-│   │   ├── compareFields.ts
-│   │   ├── logoAssets.ts
-│   │   ├── lookalikeDetector.ts
-│   │   └── parseProfile.ts
-│   ├── services/
-│   │   ├── brandguardService.ts
-│   │   └── store.ts
-│   ├── types/brandguard.ts
-│   ├── index.ts
-│   └── server.ts
-├── frontend/
-│   ├── index.ts
-│   └── src/
-│       ├── components/
-│       ├── features/
-│       ├── lib/
-│       ├── services/
-│       ├── types/
-│       ├── App.tsx
-│       ├── index.css
-│       └── main.tsx
-├── index.html
-├── metadata.json
+│   ├── app/
+│   │   ├── engine/             # Similarity, exclusion, and scoring modules
+│   │   ├── models/              # SQLAlchemy entities
+│   │   ├── schemas/             # Pydantic contracts
+│   │   ├── routers/             # FastAPI resource routes
+│   │   ├── data/                # Synthetic benchmark definition
+│   │   ├── config.py            # Environment-backed settings
+│   │   └── main.py              # API assembly and middleware
+│   ├── alembic/                 # Database migration history
+│   ├── tests/                   # Engine and exclusion tests
+│   ├── docker-compose.yml
+│   ├── requirements.txt
+│   └── pyproject.toml
 ├── package.json
-├── server.ts
 ├── tsconfig.json
-└── vite.config.ts
+├── vite.config.ts
+└── README.md
 ```
 
-## Security and responsible use
+This is a representative overview of the repository layout. Confirm filenames against the current checkout if the project structure has changed.
 
-- Use this project for defensive brand-protection evaluation and analyst training.
-- Do not treat synthetic outputs as legal conclusions without human verification.
-- Keep API keys/secrets out of source control.
-- Do not automate abusive scanning/takedown actions from this demo codebase.
+## Security and Responsible Use
 
-## Deployment instructions
+Implemented safeguards include:
 
-- **Live demo:** https://brand-guard1.vercel.app
-- For local production-like frontend build:
-```bash
-cd /home/runner/work/BrandGuard1/BrandGuard1
-npm install
-npm run build
-npm run preview
-```
-- Backend service can be started separately via `npx tsx backend/server.ts`.
+- Deterministic, inspectable scoring rather than opaque classification.
+- Official-asset exclusion before threat scoring.
+- Isolated ground-truth labels for evaluation.
+- Request IDs and process-time headers from FastAPI middleware.
+- Pydantic request validation for documented API schemas.
+- Human review and a pre-submission checklist before using a takedown draft.
+- No automated destructive action against external platforms.
 
-## Limitations and future improvements
+Important controls not implemented include authentication, authorization, tenant isolation, reviewer identity verification, production secret management, rate limiting, audit-log integrity protection, complete file-upload validation/storage, and provider-specific live-source provenance validation.
 
-1. Add real persistence (e.g., PostgreSQL) and migration tooling.
-2. Add authenticated multi-tenant analyst workflows.
-3. Add formal OpenAPI docs and generated SDK clients.
-4. Add repeatable backend and frontend test suites.
-5. Add ingestion connectors with explicit consent/compliance controls.
-6. Add structured takedown draft export pipelines.
+Use only data and platform access for which you have authorization. Treat findings as triage evidence requiring human verification, not as a legal conclusion.
+
+## Deployment Notes
+
+The repository provides a development-oriented Docker Compose setup for PostgreSQL and FastAPI. Production deployment requires additional configuration, including:
+
+- Hosting the built frontend.
+- Running the backend under a production ASGI process.
+- Using a managed PostgreSQL database and controlled migrations.
+- Restricting CORS origins.
+- Storing credentials in the hosting provider's secret manager.
+- Adding authentication and authorization before exposing brand and finding data.
+- Configuring health checks, backups, and data retention.
+
+The live demo link above is provided as a project link; verify that the deployed application and backend behavior match the current repository before submission. Do not assume the public frontend URL means every backend feature is deployed and operational.
+
+## Limitations and Future Improvements
+
+Current limitations:
+
+- The scan route evaluates database records rather than performing broad social-platform discovery.
+- The Apple iTunes entry is a catalog record, not a verified live scanning adapter.
+- CSV/JSON ingestion has no implemented import endpoint.
+- Synthetic data is fictional and controlled; its metrics do not estimate real-world precision or recall.
+- Candidate quality depends on available names, descriptions, hashes, external IDs, and package IDs.
+- The homoglyph table is finite and does not replace a complete Unicode security policy.
+- Description comparison uses term-frequency cosine similarity rather than a full TF-IDF corpus.
+- Authentication, authorization, multi-tenancy, rate limiting, and production audit hardening are not implemented.
+- There is no scheduler or recurring monitoring service.
+- Findings are not documented as deduplicated across scans.
+- Client fallback and backend persistence do not guarantee identical behavior.
+
+Potential future improvements:
+
+1. Add a tested provider-adapter interface for authorized live app/social ingestion.
+2. Add durable finding deduplication across scans.
+3. Improve asset upload handling and validation.
+4. Add authentication, tenant isolation, and role-based access control.
+5. Build a larger, independently labeled evaluation dataset.
+6. Add unit and component tests to CI, plus dependency and secret scanning.
+7. Expand Unicode security coverage and test false-positive behavior across languages and scripts.
+8. Add analyst case management and evidence export with clear review status.
 
 ## Conclusion
 
-BrandGuard provides an explainable, deterministic foundation for impersonation triage across social and app channels. This repository currently demonstrates the workflow with synthetic data and analyst-first review controls, while clearly separating implemented features from planned production architecture.
+BrandGuard demonstrates an evidence-based workflow for identifying suspicious digital identities without making the detector itself opaque. Its main technical contribution is the combination of deterministic name, visual, description, and identity-anchor signals with official-asset exclusions and corroboration rules.
+
+The application persists evidence, supports analyst review, and produces a human-reviewed takedown draft. The current implementation is intentionally bounded: scans use a local synthetic benchmark, while live discovery, authentication, scheduled monitoring, and automatic enforcement remain outside the verified feature set.
+
+---
+
+**BrandGuard is a hackathon prototype for security investigation and decision support. It is not a substitute for verified threat intelligence, human review, or an organization's security response process.**
