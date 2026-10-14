@@ -101,6 +101,28 @@ brandguard/
 └── package.json                         # Dependencies & npm scripts
 ```
 
+- **Frontend:** React 19, TypeScript, and Vite. The API client calls FastAPI when available and can fall back to client-side storage and detection.
+- **Backend:** FastAPI routers, SQLAlchemy models, Pydantic schemas, and Alembic migrations.
+- **Persistence:** PostgreSQL 16 for server-side application records.
+- **Detection engine:** Deterministic Python modules under `backend/app/engine/`.
+- **Evaluation:** Ground-truth labels are stored separately in `evaluation_labels`; the scan logic does not query those labels.
+
+```mermaid
+flowchart TD
+    U[Analyst / Demo User] --> UI[React + TypeScript Frontend]
+    UI --> API[API Client]
+    API -->|Backend available| FA[FastAPI REST API]
+    API -->|Fallback mode| CS[Client-side Store and Engine]
+    FA --> ENG[Detection Engine]
+    FA --> DB[(PostgreSQL)]
+    ENG --> SIG[Signals and Risk Assessment]
+    DB --> REC[Candidate Records and Findings]
+    SIG --> REC
+    REC --> UI
+    CS --> LS[(Browser localStorage)]
+    CS --> UI
+```
+
 ---
 
 ## 🔍 Core Detection Capabilities
