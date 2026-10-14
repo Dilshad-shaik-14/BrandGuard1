@@ -112,6 +112,131 @@ The user-supplied target mentions FastAPI + SQLAlchemy/Pydantic/Alembic + Postgr
 
 ### Explicitly absent from current implementation
 No workers/queues/crawlers/schedulers/auth service/automatic takedown service are implemented in this repository.
+## Architecture
+
+BrandGuard follows a modular, analyst-centric architecture that separates the user interface, API layer, detection engine, data management, and evaluation workflows. The platform processes candidate social profiles and mobile app records against registered official brand assets to generate explainable risk findings.
+
+### Architecture Diagram
+
+```mermaid
+flowchart TD
+    U[Security Analyst] --> UI[React 19 + TypeScript + Vite]
+    
+    UI --> API[Express + TypeScript REST API]
+    
+    API --> ROUTES[API Routes and Validation]
+    ROUTES --> SERVICE[BrandGuard Service Layer]
+    
+    SERVICE --> STORE[Demo Data Store]
+    STORE --> BRANDS[Brand Registry and Official Assets]
+    STORE --> CANDIDATES[Candidate Profiles and Apps]
+    STORE --> FINDINGS[Findings and Review Events]
+    STORE --> SCANS[Scan and Evaluation Records]
+    
+    SERVICE --> ENGINE[Deterministic Detection Engine]
+    
+    ENGINE --> NAME[Name Similarity and Homoglyph Detection]
+    ENGINE --> LOGO[Logo Similarity Evidence]
+    ENGINE --> BIO[Bio and Description Analysis]
+    ENGINE --> IDENTITY[Identity Conflict Detection]
+    ENGINE --> SCAM[Scam Language Signals]
+    
+    NAME --> SCORE[Weighted Risk Scoring]
+    LOGO --> SCORE
+    BIO --> SCORE
+    IDENTITY --> SCORE
+    SCAM --> SCORE
+    
+    SCORE --> GUARD[Risk Bands and Corroboration Guardrails]
+    GUARD --> FINDINGS
+    
+    FINDINGS --> REVIEW[Analyst Review and Audit Trail]
+    REVIEW --> UI
+    
+    SERVICE --> EVAL[Synthetic Evaluation Metrics]
+    EVAL --> UI
+```
+
+### 1. Presentation Layer
+
+**Technologies:** React 19, TypeScript, Vite, Tailwind CSS.
+
+The frontend provides an interactive security analyst workspace through:
+
+- **Dashboard:** Brand security posture, scan summaries, and risk distribution.
+- **Brand Registry:** Registration of brands, aliases, domains, and official identity assets.
+- **Findings Explorer:** Filtering, prioritization, and investigation of suspicious candidates.
+- **Evidence Viewer:** Character-level differences, signal breakdowns, and identity comparisons.
+- **Review Workflow:** Updating finding statuses and recording analyst decisions.
+
+### 2. API Layer
+
+**Technologies:** Node.js, Express, TypeScript.
+
+The Express backend exposes REST endpoints under `/api` for brand management, scanning, lookalike analysis, profile parsing, finding reviews, and evaluation data.
+
+The API layer connects frontend requests to the service and detection modules. It is separate from the React presentation layer, allowing backend logic to evolve independently.
+
+### 3. Detection and Risk Analysis Engine
+
+**Technology:** TypeScript.
+
+The detection engine evaluates candidate identities against registered official assets using deterministic, explainable signals:
+
+- **Name similarity:** Typographical variations, homoglyphs, mixed scripts, and lookalike patterns.
+- **Logo similarity:** Visual similarity evidence associated with candidate and official assets.
+- **Description analysis:** Similarity in profile biographies, descriptions, and suspicious language.
+- **Identity conflicts:** Mismatches involving handles, account identifiers, package IDs, and developer identities.
+- **Scam indicators:** Suspicious language and other risk-related evidence.
+
+The engine combines the available signals using weighted scoring and applies guardrails, including name-only and low-evidence-coverage caps. Findings are assigned risk bands to help analysts prioritize investigations.
+
+### 4. Data Management Layer
+
+**Current implementation:** Demo-state storage with frontend local state and localStorage.
+
+The application manages demonstration records for:
+
+- Registered brands and official assets.
+- Candidate social profiles and mobile applications.
+- Scan records and generated findings.
+- Analyst review decisions and event history.
+- Synthetic evaluation datasets and metrics.
+
+The current repository does **not** implement PostgreSQL persistence or a production database migration layer. Data persistence depends on the specific application flow and storage mechanism.
+
+### 5. Review and Audit Layer
+
+The review workflow supports human-controlled decisions, including `new`, `under_review`, `confirmed`, `false_positive`, and `resolved` statuses.
+
+Review actions maintain event history containing status transitions, reviewer information, notes, and timestamps where supported by the implementation. This helps analysts understand how findings were handled.
+
+BrandGuard provides investigation support and takedown guidance; it does not automatically submit takedown requests.
+
+### 6. Evaluation Layer
+
+The evaluation interface presents seeded synthetic metrics and benchmark examples to demonstrate the detection workflow and compare risk-scoring behavior.
+
+These metrics are intended for demonstration and algorithm evaluation. They should not be interpreted as independently validated production detection accuracy.
+
+### 7. Deployment and Integration Boundaries
+
+The frontend can be built and deployed as a web application, while the Express backend can run as a separate Node.js service when the deployment environment supports it.
+
+The current repository does not include a production crawler, scheduled scanning workers, a queue system, authentication service, tenant isolation, or a PostgreSQL-backed infrastructure.
+
+### Architecture Summary
+
+| Component | Technology | Responsibility |
+|---|---|---|
+| Frontend | React 19, TypeScript, Vite | Analyst dashboard and investigation UI |
+| API | Express, TypeScript | REST endpoints and request handling |
+| Detection engine | TypeScript modules | Similarity analysis and explainable scoring |
+| Demo data layer | App state and localStorage | Demonstration records and review state |
+| Evaluation | Synthetic benchmark data | Demonstration metrics and scoring comparisons |
+| Deployment | Vercel frontend; separately hosted backend where configured | Application delivery |
+
+**Design principle:** BrandGuard prioritizes explainability, deterministic scoring, human oversight, and a clear separation between implemented demo capabilities and planned production infrastructure.
 
 ## Technology stack
 
